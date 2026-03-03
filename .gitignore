@@ -1,0 +1,31 @@
+# Binaries
+youtube-summarizer
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Environment variables (keep .env.example)
+.env
+.youtube-summarizer.env
+
+# Temp files
+.youtube-summarizer-temp/
+*.wav
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
