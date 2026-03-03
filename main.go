@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/yamirghofran/youtube-summarizer/cmd"
+	"github.com/yamirghofran/summarizer/cmd"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 		// Try loading from home directory as fallback
 		homeDir, err := os.UserHomeDir()
 		if err == nil {
-			_ = godotenv.Load(homeDir + "/.youtube-summarizer.env")
+			_ = godotenv.Load(homeDir + "/.summarizer.env")
 		}
 	}
 

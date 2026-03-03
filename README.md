@@ -32,12 +32,12 @@ A Go CLI tool and Telegram bot that summarizes YouTube videos and web pages usin
 
 ```bash
 # Clone the repository
-git clone https://github.com/yamirghofran/youtube-summarizer.git
-cd youtube-summarizer
+git clone https://github.com/yamirghofran/summarizer.git
+cd summarizer
 
 # Install dependencies and build
 go mod tidy
-go build -o youtube-summarizer .
+go build -o summarizer .
 ```
 
 ## Configuration
@@ -73,31 +73,31 @@ ALLOWED_USER_IDS=123456789,987654321
 
 ```bash
 # Summarize a YouTube video
-./youtube-summarizer summarize "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+./summarizer summarize "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # Summarize a web page
-./youtube-summarizer summarize "https://example.com/article"
+./summarizer summarize "https://example.com/article"
 
 # Short YouTube URLs work too
-./youtube-summarizer summarize "https://youtu.be/dQw4w9WgXcQ"
+./summarizer summarize "https://youtu.be/dQw4w9WgXcQ"
 ```
 
 #### Save to File
 
 ```bash
-./youtube-summarizer summarize "https://youtube.com/..." -o summary.txt
+./summarizer summarize "https://youtube.com/..." -o summary.txt
 ```
 
 #### Use a Different Model
 
 ```bash
-./youtube-summarizer summarize "https://youtube.com/..." --model gpt-4o
+./summarizer summarize "https://youtube.com/..." --model gpt-4o
 ```
 
 #### Keep Audio Files (YouTube only)
 
 ```bash
-./youtube-summarizer summarize "https://youtube.com/..." --keep-audio
+./summarizer summarize "https://youtube.com/..." --keep-audio
 ```
 
 #### CLI Flags
@@ -114,13 +114,13 @@ Start the Telegram bot to summarize content via chat:
 
 ```bash
 # Start the bot
-./youtube-summarizer bot
+./summarizer bot
 
 # Start with debug logging
-./youtube-summarizer bot --debug
+./summarizer bot --debug
 
 # Start with token override
-./youtube-summarizer bot --token "your-bot-token"
+./summarizer bot --token "your-bot-token"
 ```
 
 #### Bot Commands
@@ -156,7 +156,7 @@ Start the Telegram bot to summarize content via chat:
 
 4. **Start the Bot**:
    ```bash
-   ./youtube-summarizer bot
+   ./summarizer bot
    ```
 
 5. **Use the Bot**:
@@ -238,7 +238,7 @@ Takeaways
 ## Project Structure
 
 ```
-youtube-summarizer/
+summarizer/
 ├── main.go                 # Entry point
 ├── cmd/
 │   ├── root.go            # Root command
@@ -281,7 +281,7 @@ The bot supports webhook mode for production deployments. See [WEBHOOK_MIGRATION
 ### Building
 
 ```bash
-go build -o youtube-summarizer .
+go build -o summarizer .
 ```
 
 ### Running Tests

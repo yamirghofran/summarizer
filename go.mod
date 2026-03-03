@@ -1,6 +1,6 @@
-module github.com/yamirghofran/youtube-summarizer
+module github.com/yamirghofran/summarizer
 
-go 1.23.0
+go 1.26.0
 
 require (
 	github.com/go-telegram/bot v1.19.0

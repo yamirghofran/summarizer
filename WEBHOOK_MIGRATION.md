@@ -120,7 +120,7 @@ func (b *Bot) StartWebhook(ctx context.Context, addr string, webhookURL string) 
 
 ```bash
 # With a public URL like https://mybot.example.com
-./youtube-summarizer bot --webhook-url https://mybot.example.com --webhook-port 8080
+./summarizer bot --webhook-url https://mybot.example.com --webhook-port 8080
 ```
 
 ### 5. Remove Webhook (if needed)
@@ -145,7 +145,7 @@ ngrok http 8080
 # 2. Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 
 # 3. Start the bot with webhook
-./youtube-summarizer bot --webhook-url https://abc123.ngrok.io
+./summarizer bot --webhook-url https://abc123.ngrok.io
 ```
 
 ## Docker Deployment Example
@@ -154,15 +154,15 @@ ngrok http 8080
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY . .
-RUN go build -o youtube-summarizer .
+RUN go build -o summarizer .
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates ffmpeg
-COPY --from=builder /app/youtube-summarizer /usr/local/bin/
+COPY --from=builder /app/summarizer /usr/local/bin/
 COPY .env /.env
 
 EXPOSE 8080
-CMD ["youtube-summarizer", "bot", "--webhook-url", "https://your-domain.com", "--webhook-port", "8080"]
+CMD ["summarizer", "bot", "--webhook-url", "https://your-domain.com", "--webhook-port", "8080"]
 ```
 
 ## Security Considerations

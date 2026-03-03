@@ -1,5 +1,5 @@
 # Binaries
-youtube-summarizer
+summarizer
 *.exe
 *.exe~
 *.dll
@@ -17,10 +17,10 @@ go.work
 
 # Environment variables (keep .env.example)
 .env
-.youtube-summarizer.env
+.summarizer.env
 
 # Temp files
-.youtube-summarizer-temp/
+.summarizer-temp/
 *.wav
 
 # IDE

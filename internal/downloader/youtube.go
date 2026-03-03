@@ -11,7 +11,7 @@ import (
 // Returns the path to the downloaded WAV file
 func DownloadWAV(url string) (string, error) {
 	// Create temp directory for downloads
-	tempDir := ".youtube-summarizer-temp"
+	tempDir := ".summarizer-temp"
 
 	// Build the yt-dlp command
 	// Use a simple output template to get the title

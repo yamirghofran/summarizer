@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yamirghofran/youtube-summarizer/internal/downloader"
-	"github.com/yamirghofran/youtube-summarizer/internal/processor"
-	"github.com/yamirghofran/youtube-summarizer/internal/transcriber"
+	"github.com/yamirghofran/summarizer/internal/downloader"
+	"github.com/yamirghofran/summarizer/internal/processor"
+	"github.com/yamirghofran/summarizer/internal/transcriber"
 )
 
 // YouTubeFetcher fetches content from YouTube videos
@@ -35,7 +35,7 @@ func (f *YouTubeFetcher) Fetch(url string) (*Content, error) {
 				os.Remove(compressedWAV)
 			}
 			// Try to remove temp directory if empty
-			os.Remove(".youtube-summarizer-temp")
+			os.Remove(".summarizer-temp")
 		}
 	}()
 

@@ -8,9 +8,9 @@ import (
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 
-	"github.com/yamirghofran/youtube-summarizer/internal/content"
-	"github.com/yamirghofran/youtube-summarizer/internal/summarizer"
-	"github.com/yamirghofran/youtube-summarizer/internal/urlutil"
+	"github.com/yamirghofran/summarizer/internal/content"
+	"github.com/yamirghofran/summarizer/internal/summarizer"
+	"github.com/yamirghofran/summarizer/internal/urlutil"
 )
 
 const (

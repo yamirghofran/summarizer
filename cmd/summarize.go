@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yamirghofran/youtube-summarizer/internal/content"
-	"github.com/yamirghofran/youtube-summarizer/internal/summarizer"
+	"github.com/yamirghofran/summarizer/internal/content"
+	"github.com/yamirghofran/summarizer/internal/summarizer"
 )
 
 var (

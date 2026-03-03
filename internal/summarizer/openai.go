@@ -8,7 +8,7 @@ import (
 
 	"github.com/sashabaranov/go-openai"
 
-	"github.com/yamirghofran/youtube-summarizer/internal/content"
+	"github.com/yamirghofran/summarizer/internal/content"
 )
 
 const (

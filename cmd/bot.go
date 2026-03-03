@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/yamirghofran/youtube-summarizer/internal/bot"
+	"github.com/yamirghofran/summarizer/internal/bot"
 )
 
 var (
