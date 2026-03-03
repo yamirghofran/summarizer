@@ -276,32 +276,32 @@ func (b *Bot) summarizeAndSend(ctx context.Context, tb *tgbot.Bot, chatID int64,
 
 // sendSummaryMessage sends the formatted summary to the chat
 func (b *Bot) sendSummaryMessage(ctx context.Context, tb *tgbot.Bot, chatID int64, cont *content.Content, summary, model string) {
-	// Build header with markdown formatting
+	// Build header with markdown formatting (strict escape for metadata)
 	var header strings.Builder
-	header.WriteString(fmt.Sprintf("📄 *%s*\n\n", escapeMarkdownV2(cont.Title)))
+	header.WriteString(fmt.Sprintf("📄 *%s*\n\n", escapeMarkdownV2Strict(cont.Title)))
 
 	if cont.Author != "" {
-		header.WriteString(fmt.Sprintf("👤 Author: %s\n", escapeMarkdownV2(cont.Author)))
+		header.WriteString(fmt.Sprintf("👤 Author: %s\n", escapeMarkdownV2Strict(cont.Author)))
 	}
 	if cont.Site != "" {
-		header.WriteString(fmt.Sprintf("🌐 Source: %s\n", escapeMarkdownV2(cont.Site)))
+		header.WriteString(fmt.Sprintf("🌐 Source: %s\n", escapeMarkdownV2Strict(cont.Site)))
 	}
 	if cont.Published != "" {
-		header.WriteString(fmt.Sprintf("📅 Published: %s\n", escapeMarkdownV2(cont.Published)))
+		header.WriteString(fmt.Sprintf("📅 Published: %s\n", escapeMarkdownV2Strict(cont.Published)))
 	}
-	header.WriteString(fmt.Sprintf("🤖 Model: %s\n", escapeMarkdownV2(model)))
+	header.WriteString(fmt.Sprintf("🤖 Model: %s\n", escapeMarkdownV2Strict(model)))
 	header.WriteString("\n━━━━━━━━━━━━━━━━━━━━\n\n")
 
 	headerText := header.String()
 
-	// Escape the summary for markdown
+	// Escape summary while preserving markdown formatting (*, _, `)
 	escapedSummary := escapeMarkdownV2(summary)
 
 	// Check if summary fits in one message
 	fullMessage := headerText + escapedSummary
 
 	if len(fullMessage) <= maxMessageLength {
-		// Send as single message
+		// Send as single message with markdown
 		tb.SendMessage(ctx, &tgbot.SendMessageParams{
 			ChatID:    chatID,
 			Text:      fullMessage,
@@ -315,7 +315,7 @@ func (b *Bot) sendSummaryMessage(ctx context.Context, tb *tgbot.Bot, chatID int6
 			ParseMode: models.ParseModeMarkdown,
 		})
 
-		// Split summary into chunks
+		// Split summary into chunks with markdown
 		b.sendLongMessageMarkdown(ctx, tb, chatID, escapedSummary)
 	}
 }
@@ -359,6 +359,47 @@ func (b *Bot) sendLongMessageMarkdown(ctx context.Context, tb *tgbot.Bot, chatID
 			ChatID:    chatID,
 			Text:      currentChunk.String(),
 			ParseMode: models.ParseModeMarkdown,
+		})
+	}
+}
+
+// sendLongMessage sends a long message as plain text (no markdown parsing)
+func (b *Bot) sendLongMessage(ctx context.Context, tb *tgbot.Bot, chatID int64, text string) {
+	// Split by paragraphs first
+	paragraphs := strings.Split(text, "\n\n")
+
+	var currentChunk strings.Builder
+
+	for _, para := range paragraphs {
+		// Check if adding this paragraph would exceed the limit
+		if currentChunk.Len()+len(para)+2 > maxMessageLength-100 {
+			// Send current chunk
+			if currentChunk.Len() > 0 {
+				tb.SendMessage(ctx, &tgbot.SendMessageParams{
+					ChatID: chatID,
+					Text:   currentChunk.String(),
+				})
+				currentChunk.Reset()
+			}
+		}
+
+		// If single paragraph is too long, split by sentences
+		if len(para) > maxMessageLength-100 {
+			b.sendChunkedMessage(ctx, tb, chatID, para)
+			continue
+		}
+
+		if currentChunk.Len() > 0 {
+			currentChunk.WriteString("\n\n")
+		}
+		currentChunk.WriteString(para)
+	}
+
+	// Send remaining chunk
+	if currentChunk.Len() > 0 {
+		tb.SendMessage(ctx, &tgbot.SendMessageParams{
+			ChatID: chatID,
+			Text:   currentChunk.String(),
 		})
 	}
 }
@@ -436,8 +477,32 @@ func (b *Bot) sendUnauthorizedMessage(ctx context.Context, tb *tgbot.Bot, chatID
 }
 
 // escapeMarkdownV2 escapes special characters for Telegram MarkdownV2 format
+// Preserves markdown formatting characters (*, _, `) while escaping others
 // In MarkdownV2, these characters must be escaped: _ * [ ] ( ) ~ ` > # + - = | { } . !
+// But we keep * _ ` unescaped to allow markdown formatting
 func escapeMarkdownV2(text string) string {
+	var result strings.Builder
+	result.Grow(len(text) + len(text)/10) // Pre-allocate extra space for escapes
+
+	for _, char := range text {
+		switch char {
+		// Keep markdown formatting characters unescaped
+		case '*', '_', '`':
+			result.WriteRune(char)
+		// Escape all other special characters
+		case '[', ']', '(', ')', '~', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!':
+			result.WriteRune('\\')
+			result.WriteRune(char)
+		default:
+			result.WriteRune(char)
+		}
+	}
+
+	return result.String()
+}
+
+// escapeMarkdownV2Strict escapes ALL special characters (for non-LLM content like titles)
+func escapeMarkdownV2Strict(text string) string {
 	var result strings.Builder
 	result.Grow(len(text) + len(text)/10) // Pre-allocate extra space for escapes
 

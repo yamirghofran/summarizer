@@ -74,7 +74,6 @@ func (s *Summarizer) Summarize(ctx context.Context, cont *content.Content) (stri
 		},
 		Temperature: 0.7,
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary: %w", err)
 	}
@@ -88,6 +87,17 @@ func (s *Summarizer) Summarize(ctx context.Context, cont *content.Content) (stri
 
 // buildSystemPrompt creates the system prompt based on content type
 func buildSystemPrompt(cont *content.Content) string {
+	formattingInstructions := `
+Format your response using Telegram Markdown:
+- Use *asterisks* for bold text (e.g., *Important Point*)
+- Use _underscores_ for italic text (e.g., _emphasis_)
+- Use inline code for technical terms (e.g., ` + "`code`" + `)
+- Use bullet points with dashes (e.g., - Item)
+- Do NOT use ## or ** for formatting
+- Do NOT use headers (#) - use bold for section titles instead
+
+Structure your summary clearly with bold section titles.`
+
 	switch cont.Type {
 	case content.ContentTypeYouTube:
 		return `You are a helpful assistant that creates concise summaries of video content.
@@ -97,7 +107,7 @@ Please summarize the video transcription in a clear and organized way. Include:
 2. Key points and insights discussed
 3. Any important conclusions or takeaways
 
-Keep the summary concise but informative. Use bullet points or numbered lists when appropriate.`
+Keep the summary concise but informative.` + formattingInstructions
 
 	case content.ContentTypeWebpage:
 		return `You are a helpful assistant that creates concise summaries of articles and web content.
@@ -107,7 +117,7 @@ Please summarize the content in a clear and organized way. Include:
 2. Key points and insights
 3. Any important conclusions or actionable takeaways
 
-Keep the summary concise but informative. Use bullet points or numbered lists when appropriate.`
+Keep the summary concise but informative.` + formattingInstructions
 
 	default:
 		return `You are a helpful assistant that creates concise summaries.
@@ -117,7 +127,7 @@ Please summarize the content in a clear and organized way. Include:
 2. Key points and insights
 3. Any important conclusions
 
-Keep the summary concise but informative.`
+Keep the summary concise but informative.` + formattingInstructions
 	}
 }
 
