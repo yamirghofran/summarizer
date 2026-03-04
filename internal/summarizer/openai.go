@@ -72,7 +72,8 @@ func (s *Summarizer) Summarize(ctx context.Context, cont *content.Content) (stri
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.7,
+		Temperature:         0.7,
+		MaxCompletionTokens: 10000,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary: %w", err)
