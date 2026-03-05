@@ -251,7 +251,11 @@ func (b *Bot) processWebURL(ctx context.Context, tb *tgbot.Bot, chatID int64, ur
 // summarizeAndSend generates a summary and sends it to the chat
 func (b *Bot) summarizeAndSend(ctx context.Context, tb *tgbot.Bot, chatID int64, cont *content.Content) {
 	// Create summarizer
-	summarizerInstance, err := summarizer.New()
+	summarizerInstance, err := summarizer.New(summarizer.Settings{
+		APIKey:  b.ai.APIKey,
+		BaseURL: b.ai.BaseURL,
+		Model:   b.ai.Model,
+	})
 	if err != nil {
 		tb.SendMessage(ctx, &tgbot.SendMessageParams{
 			ChatID: chatID,

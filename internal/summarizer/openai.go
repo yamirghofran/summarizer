@@ -3,7 +3,6 @@ package summarizer
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/sashabaranov/go-openai"
@@ -21,24 +20,28 @@ type Summarizer struct {
 	model  string
 }
 
+// Settings contains OpenAI-compatible runtime settings.
+type Settings struct {
+	APIKey  string
+	BaseURL string
+	Model   string
+}
+
 // New creates a new Summarizer instance
-func New() (*Summarizer, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY environment variable is not set")
+func New(settings Settings) (*Summarizer, error) {
+	if settings.APIKey == "" {
+		return nil, fmt.Errorf("api key is required")
 	}
 
-	// Get configuration from environment
-	baseURL := os.Getenv("OPENAI_BASE_URL")
-	model := os.Getenv("OPENAI_MODEL")
+	model := settings.Model
 	if model == "" {
 		model = defaultModel
 	}
 
 	// Create OpenAI client configuration
-	config := openai.DefaultConfig(apiKey)
-	if baseURL != "" {
-		config.BaseURL = baseURL
+	config := openai.DefaultConfig(settings.APIKey)
+	if settings.BaseURL != "" {
+		config.BaseURL = settings.BaseURL
 	}
 
 	return &Summarizer{

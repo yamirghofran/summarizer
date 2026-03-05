@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
-	"strings"
 	"syscall"
 
 	tgbot "github.com/go-telegram/bot"
@@ -18,6 +16,14 @@ type Bot struct {
 	bot          *tgbot.Bot
 	allowedUsers map[int64]bool
 	debug        bool
+	ai           AIConfig
+}
+
+// AIConfig holds provider settings used by summarization handlers.
+type AIConfig struct {
+	APIKey  string
+	BaseURL string
+	Model   string
 }
 
 // Config holds bot configuration
@@ -25,12 +31,16 @@ type Config struct {
 	Token        string
 	AllowedUsers []int64
 	Debug        bool
+	AI           AIConfig
 }
 
 // New creates a new Telegram bot instance
 func New(cfg *Config) (*Bot, error) {
 	if cfg.Token == "" {
-		return nil, fmt.Errorf("TELEGRAM_BOT_TOKEN is required")
+		return nil, fmt.Errorf("telegram bot token is required")
+	}
+	if cfg.AI.APIKey == "" {
+		return nil, fmt.Errorf("AI API key is required")
 	}
 
 	// Build allowed users map
@@ -56,6 +66,7 @@ func New(cfg *Config) (*Bot, error) {
 		bot:          tgBotInstance,
 		allowedUsers: allowedUsers,
 		debug:        cfg.Debug,
+		ai:           cfg.AI,
 	}
 
 	// Now register all handlers (including the default message handler)
@@ -115,31 +126,6 @@ func (b *Bot) IsAllowed(userID int64) bool {
 // GetBot returns the underlying telegram bot instance
 func (b *Bot) GetBot() *tgbot.Bot {
 	return b.bot
-}
-
-// ParseAllowedUsers parses comma-separated user IDs from environment
-func ParseAllowedUsers(envVar string) ([]int64, error) {
-	if envVar == "" {
-		return nil, nil
-	}
-
-	var users []int64
-	parts := strings.Split(envVar, ",")
-
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if part == "" {
-			continue
-		}
-
-		id, err := strconv.ParseInt(part, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("invalid user ID '%s': %w", part, err)
-		}
-		users = append(users, id)
-	}
-
-	return users, nil
 }
 
 // RunBot is a convenience function to run the bot with graceful shutdown

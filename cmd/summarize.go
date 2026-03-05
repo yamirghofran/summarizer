@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/yamirghofran/summarizer/internal/config"
 	"github.com/yamirghofran/summarizer/internal/content"
 	"github.com/yamirghofran/summarizer/internal/summarizer"
 )
@@ -35,12 +36,12 @@ For web pages:
   2. Extracts content and metadata
   3. Generates a summary using OpenAI-compatible API
 
-Required environment variables:
-  OPENAI_API_KEY - Your OpenAI API key
+Configuration files:
+  ~/.config/summarizer/config.toml
+  ~/.local/share/summarizer/credentials.toml
 
-Optional environment variables:
-  OPENAI_BASE_URL - Custom API endpoint (for OpenAI-compatible APIs)
-  OPENAI_MODEL    - Default model to use (can be overridden with --model flag)
+Initialize defaults with:
+  summarizer config init
 
 Required CLI tools:
   For YouTube: yt-dlp, ffmpeg, parakeet-mlx
@@ -51,7 +52,7 @@ Required CLI tools:
 
 func init() {
 	summarizeCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Save summary to file")
-	summarizeCmd.Flags().StringVar(&model, "model", "", "LLM model to use for summarization (default: from .env or gpt-4o-mini)")
+	summarizeCmd.Flags().StringVar(&model, "model", "", "LLM model to use for summarization (overrides configured model)")
 	summarizeCmd.Flags().BoolVar(&keepAudio, "keep-audio", false, "Keep downloaded audio files (YouTube only)")
 }
 
@@ -59,9 +60,16 @@ func runSummarize(cmd *cobra.Command, args []string) {
 	url := args[0]
 	ctx := context.Background()
 
-	// Override model if specified via flag (takes precedence over env)
-	if model != "" {
-		os.Setenv("OPENAI_MODEL", model)
+	loaded, err := config.Load("", "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	aiSettings, err := loaded.AISettings(model)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Detect content type
@@ -88,7 +96,6 @@ func runSummarize(cmd *cobra.Command, args []string) {
 
 	// Fetch content
 	var cont *content.Content
-	var err error
 	var start time.Time
 
 	if isYouTube {
@@ -125,7 +132,11 @@ func runSummarize(cmd *cobra.Command, args []string) {
 	fmt.Println("✨ Generating summary...")
 	start = time.Now()
 
-	summarizerInstance, err := summarizer.New()
+	summarizerInstance, err := summarizer.New(summarizer.Settings{
+		APIKey:  aiSettings.APIKey,
+		BaseURL: aiSettings.BaseURL,
+		Model:   aiSettings.Model,
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

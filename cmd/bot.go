@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/yamirghofran/summarizer/internal/bot"
+	"github.com/yamirghofran/summarizer/internal/config"
 )
 
 var (
@@ -25,12 +26,12 @@ The bot will:
 • Process and summarize the content
 • Send the summary back to the user
 
-Required environment variables:
-  TELEGRAM_BOT_TOKEN - Your Telegram bot token from @BotFather
+Configuration files:
+  ~/.config/summarizer/config.toml
+  ~/.local/share/summarizer/credentials.toml
 
-Optional environment variables:
-  ALLOWED_USER_IDS - Comma-separated list of allowed Telegram user IDs
-                    (if not set, all users are allowed)
+Initialize defaults with:
+  summarizer config init
 
 To get your Telegram user ID, message @userinfobot on Telegram.`,
 	Run: runBot,
@@ -39,30 +40,31 @@ To get your Telegram user ID, message @userinfobot on Telegram.`,
 func init() {
 	rootCmd.AddCommand(botCmd)
 
-	botCmd.Flags().StringVar(&botToken, "token", "", "Telegram bot token (overrides TELEGRAM_BOT_TOKEN env var)")
+	botCmd.Flags().StringVar(&botToken, "token", "", "Telegram bot token (overrides credentials file)")
 	botCmd.Flags().BoolVar(&botDebug, "debug", false, "Enable debug logging")
 }
 
 func runBot(cmd *cobra.Command, args []string) {
-	// Get bot token
-	token := botToken
-	if token == "" {
-		token = os.Getenv("TELEGRAM_BOT_TOKEN")
+	loaded, err := config.Load("", "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
-	if token == "" {
-		fmt.Fprintln(os.Stderr, "Error: TELEGRAM_BOT_TOKEN is required")
+
+	aiSettings, err := loaded.AISettings("")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	token, err := loaded.TelegramBotToken(botToken)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		fmt.Fprintln(os.Stderr, "Get a token from @BotFather on Telegram")
 		os.Exit(1)
 	}
 
-	// Parse allowed users
-	allowedUsersStr := os.Getenv("ALLOWED_USER_IDS")
-	allowedUsers, err := bot.ParseAllowedUsers(allowedUsersStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing ALLOWED_USER_IDS: %v\n", err)
-		os.Exit(1)
-	}
-
+	allowedUsers := loaded.Config.Telegram.AllowedUserIDs
 	if len(allowedUsers) > 0 {
 		fmt.Printf("🔒 Allowlist enabled: %d user(s) allowed\n", len(allowedUsers))
 	} else {
@@ -74,6 +76,11 @@ func runBot(cmd *cobra.Command, args []string) {
 		Token:        token,
 		AllowedUsers: allowedUsers,
 		Debug:        botDebug,
+		AI: bot.AIConfig{
+			APIKey:  aiSettings.APIKey,
+			BaseURL: aiSettings.BaseURL,
+			Model:   aiSettings.Model,
+		},
 	}
 
 	// Run bot

@@ -48,27 +48,41 @@ go build -o summarizer .
 
 ## Configuration
 
-1. Create your environment file:
+1. Initialize config files:
 ```bash
-cp .env.example .env
+./summarizer config init
 ```
 
-2. Edit `.env` with your settings:
-```env
-# OpenAI API Configuration (Required)
-OPENAI_API_KEY=your-api-key-here
+2. Edit `~/.config/summarizer/config.toml`:
+```toml
+default_provider = "openai"
 
-# Optional - use a custom API endpoint
-OPENAI_BASE_URL=http://localhost:11434/v1
+[providers.openai]
+base_url = "https://api.openai.com/v1"
+model = "gpt-4o-mini"
 
-# Optional - default model
-OPENAI_MODEL=gpt-4o-mini
+[telegram]
+allowed_user_ids = [123456789, 987654321]
+```
 
-# Telegram Bot Configuration (Optional - for bot mode)
-TELEGRAM_BOT_TOKEN=your-bot-token-here
+3. Edit `~/.local/share/summarizer/credentials.toml`:
+```toml
+[providers.openai]
+api_key = "your-api-key-here"
 
-# Optional - restrict bot access to specific users
-ALLOWED_USER_IDS=123456789,987654321
+[telegram]
+bot_token = "your-bot-token-here"
+```
+
+Migration note:
+- `summarize` and `bot` now load from TOML files only.
+- Env vars like `OPENAI_API_KEY` and `TELEGRAM_BOT_TOKEN` are no longer used.
+- `transcribe` is unchanged.
+
+`config init` options:
+```bash
+./summarizer config init --force
+./summarizer config init --config-path /custom/config.toml --credentials-path /custom/credentials.toml
 ```
 
 ## Usage
@@ -141,7 +155,7 @@ The transcribe command supports:
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--output` | `-o` | Save summary to file |
-| `--model` | | LLM model to use (overrides env) |
+| `--model` | | LLM model to use (overrides configured model) |
 | `--keep-audio` | | Keep downloaded audio files (YouTube only) |
 
 ##### Transcribe Command
@@ -177,7 +191,7 @@ Start the Telegram bot to summarize content via chat:
 - **URL Detection**: Automatically detects YouTube and web page URLs
 - **Progress Updates**: Shows real-time status (downloading, transcribing, etc.)
 - **Markdown Formatting**: Beautiful formatted summaries with bold text and structure
-- **Access Control**: Restrict to specific Telegram user IDs via `ALLOWED_USER_IDS`
+- **Access Control**: Restrict to specific Telegram user IDs via `telegram.allowed_user_ids`
 - **Long Messages**: Automatically splits long summaries into multiple messages
 
 #### Setting Up the Bot
@@ -192,10 +206,8 @@ Start the Telegram bot to summarize content via chat:
    - Note your user ID
 
 3. **Configure the Bot**:
-   ```env
-   TELEGRAM_BOT_TOKEN=your-bot-token-here
-   ALLOWED_USER_IDS=your-user-id-here
-   ```
+   - Set `telegram.bot_token` in `~/.local/share/summarizer/credentials.toml`
+   - Set `telegram.allowed_user_ids` in `~/.config/summarizer/config.toml`
 
 4. **Start the Bot**:
    ```bash
@@ -232,9 +244,12 @@ Start the Telegram bot to summarize content via chat:
 
 Works with Ollama, LM Studio, and other local LLM servers:
 
-```env
-OPENAI_BASE_URL=http://localhost:11434/v1
-OPENAI_MODEL=llama3.2
+```toml
+default_provider = "ollama"
+
+[providers.ollama]
+base_url = "http://localhost:11434/v1"
+model = "llama3.2"
 ```
 
 ## Example Output
@@ -293,6 +308,8 @@ summarizer/
 ├── main.go                 # Entry point
 ├── cmd/
 │   ├── root.go            # Root command
+│   ├── config.go          # Config command group
+│   ├── config_init.go     # Config initialization command
 │   ├── summarize.go       # Summarize command
 │   ├── transcribe.go      # Transcribe command
 │   └── bot.go             # Telegram bot command
@@ -315,9 +332,11 @@ summarizer/
 │   │   └── parakeet.go    # parakeet-mlx wrapper
 │   ├── summarizer/
 │   │   └── openai.go      # OpenAI API client
+│   ├── config/
+│   │   ├── config.go      # TOML config loading and resolution
+│   │   └── config_test.go # Config unit tests
 │   └── urlutil/
 │       └── detect.go      # URL extraction & detection
-├── .env.example           # Environment template
 ├── .gitignore
 ├── README.md
 └── WEBHOOK_MIGRATION.md   # Guide for webhook deployment

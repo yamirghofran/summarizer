@@ -23,11 +23,15 @@ For web pages:
   - Generates summary using OpenAI-compatible API
 
 Usage:
+  summarizer config init
   summarizer summarize <url> [flags]
 
 Examples:
   # Summarize a YouTube video
   summarizer summarize https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
+  # Initialize configuration files
+  summarizer config init
 
   # Summarize a web page
   summarizer summarize https://example.com/article
