@@ -10,6 +10,7 @@ type ContentType string
 const (
 	ContentTypeYouTube ContentType = "youtube"
 	ContentTypeWebpage ContentType = "webpage"
+	ContentTypeMedia   ContentType = "media" // Audio/video content (YouTube, video URLs, local files)
 )
 
 // Content represents fetched content ready for summarization

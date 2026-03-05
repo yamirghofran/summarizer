@@ -34,6 +34,7 @@ func (b *Bot) handleStart(ctx context.Context, tb *tgbot.Bot, update *models.Upd
 Send me a link and I'll summarize it for you:
 
 • 📺 *YouTube videos* \- I'll download, transcribe, and summarize
+• 🎬 *Video/audio URLs* \- I'll download, transcribe, and summarize \(\.mp4, \.mp3, etc\.\)
 • 🌐 *Web pages* \- I'll extract and summarize the content
 
 Just paste a URL and I'll handle the rest\!
@@ -65,6 +66,7 @@ func (b *Bot) handleHelp(ctx context.Context, tb *tgbot.Bot, update *models.Upda
 Just send me a URL\! I support:
 
 • YouTube videos \(youtube\.com, youtu\.be\)
+• Video/audio file URLs \(\.mp4, \.mp3, etc\.\)
 • Any web page or article
 
 *Commands:*
@@ -74,10 +76,11 @@ Just send me a URL\! I support:
 
 *Examples:*
 https://youtube\.com/watch?v=\.\.\.
+https://example\.com/video\.mp4
 https://example\.com/article
 
 *Tips:*
-• YouTube videos take longer \(download \+ transcribe\)
+• YouTube videos and media URLs take longer \(download \+ transcribe\)
 • Web pages are processed quickly
 • You'll see progress updates while processing`
 
@@ -104,6 +107,7 @@ func (b *Bot) handleStatus(ctx context.Context, tb *tgbot.Bot, update *models.Up
 
 *Services:*
 • YouTube processing: Available
+• Video/audio URL processing: Available
 • Web page processing: Available
 • AI Summarization: Available`
 
@@ -172,9 +176,10 @@ func (b *Bot) processURL(ctx context.Context, tb *tgbot.Bot, chatID int64, url s
 
 	// Detect content type
 	isYouTube := urlutil.IsYouTubeURL(url)
+	isMediaURL := content.IsMediaURL(url)
 
-	if isYouTube {
-		b.processYouTubeURL(ctx, tb, chatID, url, updateStatus)
+	if isYouTube || isMediaURL {
+		b.processMediaURL(ctx, tb, chatID, url, updateStatus)
 	} else {
 		b.processWebURL(ctx, tb, chatID, url, updateStatus)
 	}
@@ -186,13 +191,19 @@ func (b *Bot) processURL(ctx context.Context, tb *tgbot.Bot, chatID int64, url s
 	})
 }
 
-// processYouTubeURL handles YouTube video summarization
-func (b *Bot) processYouTubeURL(ctx context.Context, tb *tgbot.Bot, chatID int64, url string, updateStatus func(string)) {
-	updateStatus("⏳ Processing your request...\n\n📺 Detected: YouTube video")
+// processMediaURL handles media (YouTube, video/audio URLs) summarization
+func (b *Bot) processMediaURL(ctx context.Context, tb *tgbot.Bot, chatID int64, url string, updateStatus func(string)) {
+	// Determine content type for display
+	contentType := "video/audio URL"
+	if urlutil.IsYouTubeURL(url) {
+		contentType = "YouTube video"
+	}
+
+	updateStatus(fmt.Sprintf("⏳ Processing your request...\n\n📺 Detected: %s", contentType))
 
 	// Check dependencies
-	updateStatus("⏳ Processing your request...\n\n🔍 Checking dependencies...")
-	fetcher := content.NewYouTubeFetcher(false)
+	updateStatus(fmt.Sprintf("⏳ Processing your request...\n\n🔍 Checking dependencies..."))
+	fetcher := content.NewMediaFetcher(false)
 	if err := fetcher.CheckDependencies(); err != nil {
 		tb.SendMessage(ctx, &tgbot.SendMessageParams{
 			ChatID: chatID,
@@ -202,18 +213,18 @@ func (b *Bot) processYouTubeURL(ctx context.Context, tb *tgbot.Bot, chatID int64
 	}
 
 	// Fetch content (download, compress, transcribe)
-	updateStatus("⏳ Processing your request...\n\n⬇️ Downloading audio...")
+	updateStatus(fmt.Sprintf("⏳ Processing your request...\n\n⬇️ Downloading and transcribing..."))
 	cont, err := fetcher.Fetch(url)
 	if err != nil {
 		tb.SendMessage(ctx, &tgbot.SendMessageParams{
 			ChatID: chatID,
-			Text:   fmt.Sprintf("❌ Error processing video: %v", err),
+			Text:   fmt.Sprintf("❌ Error processing media: %v", err),
 		})
 		return
 	}
 
 	// Summarize
-	updateStatus(fmt.Sprintf("⏳ Processing your request...\n\n✨ Generating summary...\n\n📹 Video: %s", truncate(cont.Title, 50)))
+	updateStatus(fmt.Sprintf("⏳ Processing your request...\n\n✨ Generating summary...\n\n📹 %s", truncate(cont.Title, 50)))
 	b.summarizeAndSend(ctx, tb, chatID, cont)
 }
 
@@ -460,6 +471,7 @@ func (b *Bot) sendHelpMessage(ctx context.Context, tb *tgbot.Bot, chatID int64) 
 	msg := `👋 Send me a link to summarize!
 
 • 📺 YouTube videos
+• 🎬 Video/audio file URLs (.mp4, .mp3, etc.)
 • 🌐 Web pages
 
 Just paste a URL and I'll handle the rest.
