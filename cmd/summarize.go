@@ -152,20 +152,20 @@ func runSummarize(cmd *cobra.Command, args []string) {
 	// Output results
 	output := formatOutput(cont, summary, summarizerInstance.GetModel())
 
-	// Print to console
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	fmt.Println("SUMMARY")
-	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-	fmt.Println(output)
-
-	// Save to file if specified
 	if outputFile != "" {
 		if err := os.WriteFile(outputFile, []byte(output), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error saving to file: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("\n✓ Summary saved to: %s\n", outputFile)
+		return
 	}
+
+	// Print to console
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("SUMMARY")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(output)
 }
 
 func displayContentInfo(cont *content.Content) {
