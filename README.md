@@ -5,6 +5,7 @@ A Go CLI tool and Telegram bot that summarizes YouTube videos and web pages usin
 ## Features
 
 - **YouTube Videos**: Downloads audio, transcribes with parakeet-mlx, and summarizes
+- **Audio/Video Files**: Transcribe local audio or video files directly
 - **Web Pages**: Extracts content with defuddle and summarizes
 - **Auto-detection**: Automatically detects YouTube vs web URLs
 - **OpenAI Compatible**: Works with OpenAI, Ollama, LM Studio, Together AI, and other compatible APIs
@@ -20,6 +21,11 @@ A Go CLI tool and Telegram bot that summarizes YouTube videos and web pages usin
 ### For YouTube Videos
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Download YouTube videos
 - [ffmpeg](https://ffmpeg.org) - Audio processing
+- [parakeet-mlx](https://github.com/anthropics/claude-code) - Audio transcription
+
+### For Audio/Video Files (Transcribe command)
+- [ffmpeg](https://ffmpeg.org) - Video to audio conversion & compression
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Download from URLs
 - [parakeet-mlx](https://github.com/anthropics/claude-code) - Audio transcription
 
 ### For Web Pages
@@ -100,13 +106,50 @@ ALLOWED_USER_IDS=123456789,987654321
 ./summarizer summarize "https://youtube.com/..." --keep-audio
 ```
 
+#### Transcribe Audio/Video
+
+```bash
+# Transcribe a local audio file
+./summarizer transcribe "audio.mp3"
+
+# Transcribe a local video file
+./summarizer transcribe "video.mp4"
+
+# Transcribe a YouTube video
+./summarizer transcribe "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+# Transcribe from a direct URL
+./summarizer transcribe "https://example.com/audio.mp3"
+
+# Save transcription to file
+./summarizer transcribe "audio.mp3" -o transcription.txt
+
+# Keep intermediate audio files
+./summarizer transcribe "video.mp4" --keep-audio
+```
+
+The transcribe command supports:
+- **Local audio files**: mp3, wav, m4a, flac, ogg, aac, wma
+- **Local video files**: mp4, mkv, avi, mov, wmv, flv, webm, m4v
+- **YouTube URLs**: Downloads and transcribes
+- **Direct URLs**: Downloads and transcribes
+
 #### CLI Flags
+
+##### Summarize Command
 
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--output` | `-o` | Save summary to file |
 | `--model` | | LLM model to use (overrides env) |
 | `--keep-audio` | | Keep downloaded audio files (YouTube only) |
+
+##### Transcribe Command
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--output` | `-o` | Save transcription to file |
+| `--keep-audio` | | Keep intermediate audio files (converted from video/downloaded) |
 
 ### Telegram Bot Mode
 
@@ -172,6 +215,14 @@ Start the Telegram bot to summarize content via chat:
 3. **Transcribe** - Uses `parakeet-mlx` for speech-to-text
 4. **Summarize** - Uses OpenAI-compatible API to generate summary
 5. **Cleanup** - Removes temp files (unless `--keep-audio`)
+
+### Transcribe Pipeline
+1. **Download** - Uses `yt-dlp` for YouTube URLs, HTTP for direct URLs (skipped for local files)
+2. **Convert** - Uses `ffmpeg` to extract audio from video files (skipped for audio files)
+3. **Compress** - Uses `ffmpeg` to convert to 16kHz mono at 1.7x speed
+4. **Transcribe** - Uses `parakeet-mlx` for speech-to-text
+5. **Output** - Prints to stdout or saves to file
+6. **Cleanup** - Removes temp files (unless `--keep-audio`)
 
 ### Web Page Pipeline
 1. **Fetch** - Uses `defuddle` to extract content and metadata
@@ -243,6 +294,7 @@ summarizer/
 ├── cmd/
 │   ├── root.go            # Root command
 │   ├── summarize.go       # Summarize command
+│   ├── transcribe.go      # Transcribe command
 │   └── bot.go             # Telegram bot command
 ├── internal/
 │   ├── bot/
@@ -254,9 +306,11 @@ summarizer/
 │   │   ├── youtube.go     # YouTube fetcher
 │   │   └── webpage.go     # Web page fetcher
 │   ├── downloader/
-│   │   └── youtube.go     # yt-dlp wrapper
+│   │   ├── youtube.go     # yt-dlp wrapper
+│   │   └── url.go         # URL downloader
 │   ├── processor/
-│   │   └── audio.go       # ffmpeg wrapper
+│   │   ├── audio.go       # ffmpeg wrapper
+│   │   └── video.go       # Video to audio conversion
 │   ├── transcriber/
 │   │   └── parakeet.go    # parakeet-mlx wrapper
 │   ├── summarizer/
