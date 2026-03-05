@@ -48,4 +48,5 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(summarizeCmd)
+	rootCmd.AddCommand(transcribeCmd)
 }
