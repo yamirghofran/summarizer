@@ -1,0 +1,84 @@
+name: opencode-pr-description
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  write-description:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check if description is empty
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            const stripped = body.replace(/\s+/g, '').replace(/<!--.*?-->/gs, '');
+            const templatePlaceholders = [
+              '## Summary',
+              '## Type of Change',
+              '## Test Plan',
+              '## Documentation Impact',
+              '## ADR / Decision Impact',
+              '## Operational Impact',
+              '## Risk Level',
+              '## Reviewer Notes'
+            ];
+            let isTemplateOnly = true;
+            for (const placeholder of templatePlaceholders) {
+              const idx = stripped.indexOf(placeholder.replace(/\s+/g, ''));
+              if (idx !== -1) {
+                const after = stripped.substring(idx + placeholder.replace(/\s+/g, '').length);
+                if (after.length > 5) {
+                  isTemplateOnly = false;
+                  break;
+                }
+              }
+            }
+            const isEmpty = stripped.length === 0 || isTemplateOnly;
+            core.info(`PR description empty or template-only: ${isEmpty}`);
+            core.setOutput('empty', isEmpty);
+
+      - name: Checkout repository
+        if: steps.check.outputs.empty == 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Generate PR description
+        if: steps.check.outputs.empty == 'true'
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/deepseek-v4-flash-free
+          prompt: |
+            A pull request was just opened with an empty description. Your task is to write
+            a comprehensive PR description by analyzing the changes and the codebase.
+
+            Steps:
+            1. Read the PR template at .github/pull_request_template.md to understand the required format.
+            2. Use `gh pr diff ${{ github.event.pull_request.number }}` to see all changes.
+            3. Explore the relevant files in the codebase to understand context.
+            4. Use `gh pr edit ${{ github.event.pull_request.number }} --body "<description>"` to set
+               the PR description.
+
+            The description MUST follow the PR template format and fill in every section:
+            - **Summary**: A clear, concise explanation of what this PR does and why.
+            - **Type of Change**: Check the appropriate checkbox(es).
+            - **Test Plan**: Describe how the changes were or should be tested. Include specific
+              commands or steps. If tests exist, mention them.
+            - **Documentation Impact**: Assess whether docs need updating.
+            - **ADR / Decision Impact**: Note any architectural decisions.
+            - **Operational Impact**: Note deployment, migration, or monitoring needs.
+            - **Risk Level**: Assess risk (low/medium/high) with justification.
+            - **Reviewer Notes**: Highlight anything reviewers should pay attention to.
+
+            Be specific and reference actual file names, function names, and line numbers from
+            the diff. Do not use placeholder text like "TBD" or "N/A" — provide real analysis.
