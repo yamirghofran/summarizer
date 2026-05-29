@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - name: Check if description is empty
@@ -56,8 +56,10 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/deepseek-v4-flash-free
+          token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             A pull request was just opened with an empty description. Your task is to write
             a comprehensive PR description by analyzing the changes and the codebase.
