@@ -21,12 +21,12 @@ A Go CLI tool and Telegram bot that summarizes YouTube videos and web pages usin
 ### For YouTube Videos
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Download YouTube videos
 - [ffmpeg](https://ffmpeg.org) - Audio processing
-- [parakeet-mlx](https://github.com/anthropics/claude-code) - Audio transcription
+- [parakeet-mlx](https://github.com/senstella/parakeet-mlx) - Audio transcription
 
 ### For Audio/Video Files (Transcribe command)
 - [ffmpeg](https://ffmpeg.org) - Video to audio conversion & compression
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Download from URLs
-- [parakeet-mlx](https://github.com/anthropics/claude-code) - Audio transcription
+- [parakeet-mlx](https://github.com/senstella/parakeet-mlx) - Audio transcription
 
 ### For Web Pages
 - [defuddle](https://github.com/silverbulletmd/defuddle) - Web content extraction

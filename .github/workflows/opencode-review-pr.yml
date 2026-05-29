@@ -1,0 +1,60 @@
+name: opencode-review-pr
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Go code review
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: opencode/deepseek-v4-flash-free
+          agent: review-pr-go
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Review this pull request using the review-pr-go agent.
+
+            The agent will spawn specialized sub-agents to review:
+            - General Go code quality and idiomatic patterns
+            - Concurrency correctness and best practices
+            - Test coverage and testing best practices
+
+            After all reviews are complete, compile the findings into a
+            single structured review comment and post it on the PR using:
+
+              gh pr comment ${{ github.event.pull_request.number }} --body "<review>"
+
+            Format the comment as follows:
+
+            ## 🤖 OpenCode Review
+
+            ### General Code Quality
+            <findings from go-code-review>
+
+            ### Concurrency
+            <findings from go-code-review-concurrency>
+
+            ### Testing
+            <findings from go-code-review-testing>
+
+            ### Summary
+            <prioritized list of the most important suggestions>
+
+            Use `gh pr diff ${{ github.event.pull_request.number }}` to see changes.
+            Reference specific file names, function names, and line numbers.
